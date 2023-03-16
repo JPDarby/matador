@@ -118,6 +118,7 @@ def plot_2d_hull(
     colour_by_composition=False,
     label_offset=(1, 0.1),
     specific_label_offset=None,
+    specific_label_only=False,
     eform_limits=None,
     legend_kwargs=None,
     hull_dist_unit="meV",
@@ -184,7 +185,7 @@ def plot_2d_hull(
     if label_cutoff is None:
         label_cutoff = hull.args.get("label_cutoff")
 
-    scale = 1
+    scale = 1.5
     scatter = []
     chempot_labels = [
         get_formula_from_stoich(get_stoich_from_formula(species, sort=False), tex=True)
@@ -258,8 +259,10 @@ def plot_2d_hull(
     if labels or label_cutoff is not None:
         label_cursor = _get_hull_labels(hull, num_species=2, label_cutoff=label_cutoff)
         already_labelled = []
+        print(_specific_label_offset)
         for ind, doc in enumerate(label_cursor):
             formula = get_formula_from_stoich(doc["stoichiometry"], sort=True)
+            print(ind, formula)
             if formula not in already_labelled:
                 arrowprops = dict(
                     arrowstyle="-|>",
@@ -287,6 +290,7 @@ def plot_2d_hull(
                         min(1.05 * conc + 0.15, 0.95),
                         label_offset[0] * (e_f - label_offset[1]),
                     )
+
                 if _specific_label_offset:
                     plain_formula = get_formula_from_stoich(
                         doc["stoichiometry"], tex=False
@@ -300,23 +304,26 @@ def plot_2d_hull(
                     text_colour = conc_cmap(conc)
                 else:
                     text_colour = "k"
-                ax.annotate(
-                    get_formula_from_stoich(
-                        doc["stoichiometry"],
-                        latex_sub_style=r"\mathregular",
-                        tex=True,
-                        elements=hull.species,
-                        sort=False,
-                    ),
-                    xy=(conc, e_f),
-                    xytext=position,
-                    color=text_colour,
-                    textcoords="data",
-                    ha="right",
-                    va="bottom",
-                    arrowprops=arrowprops,
-                    zorder=1,
-                )
+
+                ignore = specific_label_only and not formula in specific_label_offset
+                if not ignore:
+                    ax.annotate(
+                        get_formula_from_stoich(
+                            doc["stoichiometry"],
+                            latex_sub_style=r"\mathregular",
+                            tex=True,
+                            elements=hull.species,
+                            sort=False,
+                        ),
+                        xy=(conc, e_f),
+                        xytext=position,
+                        color=text_colour,
+                        textcoords="data",
+                        ha="right",
+                        va="bottom",
+                        arrowprops=arrowprops,
+                        zorder=1,
+                    )
                 already_labelled.append(formula)
 
     if _specific_label_offset:
