@@ -259,10 +259,8 @@ def plot_2d_hull(
     if labels or label_cutoff is not None:
         label_cursor = _get_hull_labels(hull, num_species=2, label_cutoff=label_cutoff)
         already_labelled = []
-        print(_specific_label_offset)
         for ind, doc in enumerate(label_cursor):
             formula = get_formula_from_stoich(doc["stoichiometry"], sort=True)
-            print(ind, formula)
             if formula not in already_labelled:
                 arrowprops = dict(
                     arrowstyle="-|>",
@@ -1285,6 +1283,7 @@ def _scatter_plot_by_source(
 
     legend_sources = {}
 
+    #jpd47 plot some sources in front of other so you can always see swaps and ICSD strucs
     for source in sources:
         if "concs" not in points_by_source[source]:
             continue
