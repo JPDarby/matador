@@ -122,6 +122,7 @@ def plot_2d_hull(
     eform_limits=None,
     legend_kwargs=None,
     hull_dist_unit="meV",
+    prov_guesser=None,
     **kwargs,
 ):
     """Plot calculated hull, returning ax and fig objects for further editing.
@@ -185,7 +186,7 @@ def plot_2d_hull(
     if label_cutoff is None:
         label_cutoff = hull.args.get("label_cutoff")
 
-    scale = 1.5
+    scale = 1
     scatter = []
     chempot_labels = [
         get_formula_from_stoich(get_stoich_from_formula(species, sort=False), tex=True)
@@ -409,6 +410,7 @@ def plot_2d_hull(
             source_labels=source_labels,
             plot_hull_points=plot_hull_points,
             legend_kwargs=legend_kwargs,
+            prov_guesser=prov_guesser,
         )
 
     if eform_limits is None:
@@ -1220,12 +1222,19 @@ def _scatter_plot_by_source(
     source_labels=None,
     plot_hull_points=True,
     legend_kwargs=None,
+    prov_guesser=None,
 ):
     """Add scatter points to the hull depending on the guessed
     provenance of a structure.
 
     """
-    from matador.utils.cursor_utils import get_guess_doc_provenance
+
+    print("scale is", scale)
+    # use the default provenance guesser if no custom one is provided
+    if prov_guesser is None:
+        from matador.utils.cursor_utils import get_guess_doc_provenance
+        prov_guesser = get_guess_doc_provenance
+
 
     if sources is None:
         sources = [
@@ -1260,7 +1269,7 @@ def _scatter_plot_by_source(
     hull_points_by_source = {source: defaultdict(list) for source in sources}
     sources_present = set()
     for doc in hull.cursor:
-        source = get_guess_doc_provenance(doc["source"])
+        source = prov_guesser(doc["source"])
         if source not in sources:
             # use grey for undesired sources
             source = "Other"
@@ -1284,9 +1293,13 @@ def _scatter_plot_by_source(
     legend_sources = {}
 
     #jpd47 plot some sources in front of other so you can always see swaps and ICSD strucs
-    for source in sources:
+    for j, source in enumerate(sources):
         if "concs" not in points_by_source[source]:
             continue
+        if "ICSD" in source or "Swap" in source:
+            marker="^"
+        else:
+            marker="o"
 
         concs = points_by_source[source]["concs"]
         energies = points_by_source[source]["energies"]
@@ -1295,25 +1308,30 @@ def _scatter_plot_by_source(
             energies,
             c=colour_choices[source],
             alpha=alpha,
-            s=scale * 20,
+            s=scale * 40,
             lw=0,
-            zorder=100,
+            zorder=5*j,
             rasterized=True,
+            marker=marker,
         )
 
         legend_sources[source] = colour_choices[source]
 
-    hull_point_options = dict(edgecolor="k", alpha=1, s=scale * 40, lw=1.5, zorder=1e5)
+    hull_point_options = dict(edgecolor="k", alpha=1, s=scale * 50, lw=1.5, zorder=1e5)
 
     if not plot_hull_points:
         for source in sources:
             if "concs" not in hull_points_by_source[source]:
                 continue
+            if "ICSD" in source or "Swap" in source:
+                marker="^"
+            else:
+                marker="o"
 
             concs = hull_points_by_source[source]["concs"]
             energies = hull_points_by_source[source]["energies"]
             ax.scatter(
-                concs, energies, facecolor=colour_choices[source], **hull_point_options
+                concs, energies, facecolor=colour_choices[source], **hull_point_options, marker=marker
             )
 
             legend_sources[source] = colour_choices[source]
