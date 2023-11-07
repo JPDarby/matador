@@ -24,7 +24,7 @@ class TemperatureDependentHull(EnsembleHull):
     energy_key = "free_energy_per_atom"
 
     def __init__(
-        self, cursor, energy_key="enthalpy_per_atom", temperatures=None, use_castep_thermo=True, **kwargs
+        self, cursor, energy_key="enthalpy_per_atom", temperatures=None, use_castep_thermo=False, **kwargs
     ):
 
         self.temperatures = temperatures
@@ -36,29 +36,23 @@ class TemperatureDependentHull(EnsembleHull):
 
         # prepare the cursor by computing free energies
         # and store it in the format expected by EnsembleHull
-        #print("computing free energies from vibrations...")
         for ind, doc in enumerate(cursor):
-            #print(ind, doc["source"])
             if not isinstance(doc, VibrationalDOS):
+                #Computing the vibrational free energy CAN be VERY SLOW
+                #option to use the castep thermo data if it is present and the temperatures are within the range of the castep thermo data.
+                vib_free_energies = None
+                if self.use_castep_thermo and "thermo_temps" in doc:
+                    castep_temps = np.array(doc["thermo_temps"])
+                    castep_vib_free_energies = np.array([x for x in doc["thermo_free_energy"].values()])
+                    #ONLY DO THIS if you are actually interpolating.. use 0.1 K tolerance.
+                    if min(self.temperatures) > min(castep_temps)-0.1 and max(self.temperatures) < max(castep_temps) + 0.1:
+                        vib_free_energies = [np.interp(T, castep_temps, castep_vib_free_energies)/doc["num_atoms"] for T in self.temperatures]
 
-                #jpd47 computing the virational free energy CAN be VERY SLOW
-                #it can also already be present in the doc if a thermodynamics calculation was performed.
-                if not self.use_castep_thermo:
+                if vib_free_energies is None:
                     _doc = VibrationalDOS(doc)
                     temps, vib_free_energies = _doc.vibrational_free_energy(
                         temperatures=self.temperatures
                     )
-                else:
-                    #print("trying to get vibrational free enrgies direct from the castep run")
-                    castep_temps = np.array(doc["thermo_temps"])
-                    castep_vib_free_energies = np.array([x for x in doc["thermo_free_energy"].values()])
-                    temps = self.temperatures
-                    # print("castep_temps", castep_temps.shape)
-                    # print("castep_vib_free_energies", castep_vib_free_energies.shape)
-
-                    #these should be per atom...
-                    vib_free_energies = [np.interp(T, castep_temps, castep_vib_free_energies)/doc["num_atoms"] for T in temps]
-
 
                 _cursor[ind][self.data_key] = {}
                 _cursor[ind][self.data_key][self.energy_key] = (
