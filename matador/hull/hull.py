@@ -731,9 +731,12 @@ class QueryConvexHull:
 
         """
         mu_enthalpy = get_array_from_cursor(self.chempot_cursor, self.energy_key)
+        print(mu_enthalpy)
+
         # take a copy of the cursor so it can be reordered
         _hull_cursor = deepcopy(hull_cursor)
         x = get_num_intercalated(_hull_cursor)
+        print("x is", x)
         _x_order = np.argsort(x)
         capacities = np.asarray(
             [

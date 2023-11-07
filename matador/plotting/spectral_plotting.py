@@ -550,6 +550,8 @@ def dos_plot(seeds, ax_dos, options, bbox_extra_artists=None):
 
         dos = dos_data["dos"]
 
+        print("jpd47 checking", "spin_dos" in dos_data)
+
         if "spin_dos" in dos_data:
             max_density = max(
                 np.max(
@@ -578,7 +580,7 @@ def dos_plot(seeds, ax_dos, options, bbox_extra_artists=None):
                     )
                 ]
             )
-
+        print("max density is", max_density)
         # plotting pdos depends on these other factors too
         plotting_pdos = (
             options.get("plot_pdos")
@@ -672,11 +674,15 @@ def dos_plot(seeds, ax_dos, options, bbox_extra_artists=None):
                         alpha=options.get("fill_alpha", 0.2),
                         color=dos_colour,
                     )
-
+        # print("jpd47", plotting_pdos)
+        # print("jpd47", dos_data["spin_dos"]["up"])
+        # print("jpd47", "plotting_bs", options.get("plot_bandstructure"))
+        # print("jpd47", "pdos_hide_sum", options.get("pdos_hide_sum"))
         if "spin_dos" in dos_data and not options.get("pdos_hide_sum"):
             if options.get("plot_bandstructure"):
                 if options.get("spin_only") in [None, "up"]:
                     if not plotting_pdos:
+                        print("jpd47 filling between")
                         ax_dos.fill_betweenx(
                             energies,
                             0,
@@ -684,6 +690,7 @@ def dos_plot(seeds, ax_dos, options, bbox_extra_artists=None):
                             alpha=options.get("fill_alpha", 0.2),
                             color=options["spin_up_colour"],
                         )
+
                     ax_dos.plot(
                         dos_data["spin_dos"]["up"],
                         energies,
